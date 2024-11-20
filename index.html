@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar Etiquetas con QR</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generar PDF de Etiquetas</h1>
+    <label for="codeInput">Código para las etiquetas:</label>
+    <input type="text" id="codeInput" placeholder="Escribe el código (Ejemplo: 123456)">
+
+    <label for="countInput">Número de etiquetas:</label>
+    <input type="number" id="countInput" placeholder="Cantidad (Ejemplo: 10)" min="1">
+
+    <button onclick="generatePDF()">Generar PDF</button>
+
+    <script>
+        async function generatePDF() {
+            // Importar jsPDF
+            const { jsPDF } = window.jspdf;
+
+            // Obtener los valores del usuario
+            const code = document.getElementById("codeInput").value;
+            const count = parseInt(document.getElementById("countInput").value, 10);
+
+            if (!code || isNaN(count) || count <= 0) {
+                alert("Por favor, ingresa un código válido y una cantidad mayor a 0.");
+                return;
+            }
+
+            // Configuración inicial
+            const itemsPerRow = 4; // Elementos por fila
+            const margin = 10; // Margen de la página
+            const cellWidth = 50; // Ancho de cada celda
+            const cellHeight = 50; // Altura de cada celda
+            const qrSize = 30; // Tamaño del QR
+            const lineHeight = cellHeight + 10; // Altura total por fila
+
+            // Calcular número de filas requeridas
+            const rows = Math.ceil(count / itemsPerRow);
+
+            // Calcular altura del PDF en función de las filas
+            const pdfHeight = margin * 2 + rows * lineHeight;
+
+            // Crear un nuevo documento PDF con la altura calculada
+            const pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: [210, pdfHeight], // Tamaño A4 ajustado dinámicamente
+            });
+
+            let x = margin;
+            let y = margin;
+
+            for (let i = 0; i < count; i++) {
+                const columnIndex = i % itemsPerRow; // Columna actual
+                const rowIndex = Math.floor(i / itemsPerRow); // Fila actual
+
+                x = margin + columnIndex * cellWidth;
+                y = margin + rowIndex * lineHeight;
+
+                // Generar QR como DataURL
+                const qrCodeDataURL = await QRCode.toDataURL(code);
+
+                // Dibujar QR en el PDF
+                pdf.addImage(qrCodeDataURL, "PNG", x, y, qrSize, qrSize);
+
+                // Agregar texto debajo del QR
+                pdf.text(code, x + qrSize / 2, y + qrSize + 5, { align: "center" });
+            }
+
+            // Descargar el PDF
+            pdf.save("etiquetas.pdf");
+        }
+    </script>
+</body>
+</html>
